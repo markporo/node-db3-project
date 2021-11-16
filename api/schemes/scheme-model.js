@@ -1,3 +1,5 @@
+const db = require('../../data/db-config');
+
 function find() { // EXERCISE A
   /*
     1A- Study the SQL query below running it in SQLite Studio against `data/schemes.db3`.
@@ -15,6 +17,12 @@ function find() { // EXERCISE A
     2A- When you have a grasp on the query go ahead and build it in Knex.
     Return from this function the resulting dataset.
   */
+  return db('schemes').leftJoin('steps', 'schemes.scheme_id', '=', 'steps.scheme_id')
+    .select('schemes.scheme_id', 'schemes.scheme_name')
+    .count('steps.step_id', { as: 'number_of_steps' })
+    .groupBy('schemes.scheme_id')
+    .orderBy('schemes.scheme_id', 'asc')
+
 }
 
 function findById(scheme_id) { // EXERCISE B
@@ -83,6 +91,7 @@ function findById(scheme_id) { // EXERCISE B
         "steps": []
       }
   */
+  return db('users').where({ id }).first(); // .first() makes it so only one thing returns instead of an array of things
 }
 
 function findSteps(scheme_id) { // EXERCISE C
