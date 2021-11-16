@@ -9,10 +9,22 @@ const schemeModel = require("./scheme-model")
   }
 */
 const checkSchemeId = async (req, res, next) => {
-  //   console.log('checkSchmeId bitches', req.params.id)
-
-  //   const allTheSchemes = await schemeModel.find()
-
+  //console.log('checkSchmeId ID', req.params.scheme_id)
+  schemeModel
+    .find()
+    .then(schemes => {
+      const foundScheme = schemes.find(scheme => scheme.scheme_id == req.params.scheme_id)
+      console.log('schemes', foundScheme)
+      if (!foundScheme) {
+        res.status(404).json({ message: `scheme with scheme_id ${req.params.scheme_id} not found` })
+      } else {
+        req.scheme = schemes;
+        next()
+      }
+    })
+  // .catch(() => {
+  //   res.status(500).json({ message: "error" });
+  // })
 
 }
 

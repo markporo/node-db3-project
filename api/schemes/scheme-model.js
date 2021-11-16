@@ -40,6 +40,7 @@ function findById(scheme_id) { // EXERCISE B
 
     2B- When you have a grasp on the query go ahead and build it in Knex
     making it parametric: instead of a literal `1` you should use `scheme_id`.
+    
 
     3B- Test in Postman and see that the resulting data does not look like a scheme,
     but more like an array of steps each including scheme information:
@@ -91,7 +92,27 @@ function findById(scheme_id) { // EXERCISE B
         "steps": []
       }
   */
-  return db('users').where({ id }).first(); // .first() makes it so only one thing returns instead of an array of things
+  return db('schemes').leftJoin('steps', 'schemes.scheme_id', '=', 'steps.scheme_id')
+    .where({ 'schemes.scheme_id': scheme_id })
+    .orderBy('steps.step_number', 'asc')
+    .then(arrayObtained => {
+      let arrayOfSteps = arrayObtained.map(each => {
+        let stepObj =
+        {
+          "step_id": each.step_id,
+          "step_number": each.step_number,
+          "instructions": each.instructions,
+        }
+        return stepObj;
+      })
+      let dumbObj = {
+        "scheme_id": arrayObtained[0].scheme_id,
+        "scheme_name": arrayObtained[0].scheme_name,
+        "steps": arrayOfSteps,
+      }
+      return dumbObj;
+    })
+  //return db('users').where({ id }).first(); // .first() makes it so only one thing returns instead of an array of things
 }
 
 function findSteps(scheme_id) { // EXERCISE C
