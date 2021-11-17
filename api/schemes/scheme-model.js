@@ -103,10 +103,14 @@ function findById(scheme_id) { // EXERCISE B
           "step_number": each.step_number,
           "instructions": each.instructions,
         }
-        return stepObj;
+        if (each.step_id === '' || each.step_id === null) {
+          return []
+        } else {
+          return stepObj;
+        }
       })
       let dumbObj = {
-        "scheme_id": arrayObtained[0].scheme_id,
+        "scheme_id": Number(scheme_id),
         "scheme_name": arrayObtained[0].scheme_name,
         "steps": arrayOfSteps,
       }
@@ -136,12 +140,33 @@ function findSteps(scheme_id) { // EXERCISE C
         }
       ]
   */
+  return db('schemes')
+    .where({ 'schemes.scheme_id': scheme_id })
+    .leftJoin('steps', 'schemes.scheme_id', '=', 'steps.scheme_id')
+    //.select('steps.step_id', 'step_number', 'step.instructions', 'schemes.scheme_name')
+    .orderBy('steps.step_number', 'asc')
+    .then(arrayOfObj => {
+      let newArrayOfObj = arrayOfObj.map(eachObj => {
+        console.log(eachObj, "newObj");
+        return {
+          "step_id": eachObj.step_id,
+          "step_number": eachObj.step_number,
+          "instructions": eachObj.instructions,
+          "scheme_name": eachObj.scheme_name,
+        }
+
+      })
+
+      return newArrayOfObj;
+    })
 }
 
-function add(scheme) { // EXERCISE D
+async function add(scheme) { // EXERCISE D
   /*
     1D- This function creates a new scheme and resolves to _the newly created scheme_.
   */
+  const [scheme_id] = await db('schemes').insert(scheme, "id");
+  return findById(scheme_id)
 }
 
 function addStep(scheme_id, step) { // EXERCISE E

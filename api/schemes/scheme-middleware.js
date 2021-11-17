@@ -13,7 +13,7 @@ const checkSchemeId = async (req, res, next) => {
   schemeModel
     .find()
     .then(schemes => {
-      const foundScheme = schemes.find(scheme => scheme.scheme_id == req.params.scheme_id)
+      const foundScheme = schemes.find(scheme => scheme.scheme_id === Number(req.params.scheme_id))
       console.log('schemes', foundScheme)
       if (!foundScheme) {
         res.status(404).json({ message: `scheme with scheme_id ${req.params.scheme_id} not found` })
@@ -37,9 +37,16 @@ const checkSchemeId = async (req, res, next) => {
   }
 */
 const validateScheme = (req, res, next) => {
-
+  if (!req.body.scheme_name) {
+    res.status(400).json({ message: "invalid scheme_name" })
+  } else if (req.body.scheme_name === '') {
+    res.status(400).json({ message: "invalid scheme_name" })
+  } else if (typeof req.body.scheme_name !== "string") {
+    res.status(400).json({ message: "invalid scheme_name" })
+  } else {
+    next()
+  }
 }
-
 /*
   If `instructions` is missing, empty string or not a string, or
   if `step_number` is not a number or is smaller than one:
@@ -50,7 +57,13 @@ const validateScheme = (req, res, next) => {
   }
 */
 const validateStep = (req, res, next) => {
-
+  if (!req.body.instructions || req.body.instructions === '' || typeof req.body.instructions !== 'string') {
+    res.status(400).json({ message: "invalid step" })
+  } else if (req.body.step_number < 1 || typeof req.body.step_number !== "number") {
+    res.status(400).json({ message: "invalid step" })
+  } else {
+    next()
+  }
 }
 
 module.exports = {
