@@ -147,7 +147,7 @@ function findSteps(scheme_id) { // EXERCISE C
     .orderBy('steps.step_number', 'asc')
     .then(arrayOfObj => {
       let newArrayOfObj = arrayOfObj.map(eachObj => {
-        console.log(eachObj, "newObj");
+        // console.log(eachObj, "newObj");
         return {
           "step_id": eachObj.step_id,
           "step_number": eachObj.step_number,
@@ -165,16 +165,29 @@ async function add(scheme) { // EXERCISE D
   /*
     1D- This function creates a new scheme and resolves to _the newly created scheme_.
   */
+  console.log(scheme)
   const [scheme_id] = await db('schemes').insert(scheme, "id");
   return findById(scheme_id)
 }
 
-function addStep(scheme_id, step) { // EXERCISE E
+async function addStep(scheme_id, step) { // EXERCISE E
   /*
     1E- This function adds a step to the scheme with the given `scheme_id`
     and resolves to _all the steps_ belonging to the given `scheme_id`,
     including the newly created one.
   */
+  // let combinedObj = {
+  //   "step_id": ,
+  //   "step_number": 2,
+  //   "instructions": "profit",
+  //   "scheme_name": "Get Rich Quick"
+  // }
+  console.log(step, "step from add step")
+  const [step_id] = await db('steps').insert(step, 'id')
+  // .where({ 'scheme_id': scheme_id })
+
+  console.log(step_id, "step_id from add step")
+  return findSteps(scheme_id)
 }
 
 module.exports = {

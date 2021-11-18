@@ -14,7 +14,7 @@ const checkSchemeId = async (req, res, next) => {
     .find()
     .then(schemes => {
       const foundScheme = schemes.find(scheme => scheme.scheme_id === Number(req.params.scheme_id))
-      console.log('schemes', foundScheme)
+      //console.log('schemes', foundScheme)
       if (!foundScheme) {
         res.status(404).json({ message: `scheme with scheme_id ${req.params.scheme_id} not found` })
       } else {
