@@ -17,15 +17,27 @@ function find() { // EXERCISE A
     2A- When you have a grasp on the query go ahead and build it in Knex.
     Return from this function the resulting dataset.
   */
-  return db('schemes').leftJoin('steps', 'schemes.scheme_id', '=', 'steps.scheme_id')
-    .select('schemes.scheme_id', 'schemes.scheme_name')
-    .count('steps.step_id', { as: 'number_of_steps' })
-    .groupBy('schemes.scheme_id')
-    .orderBy('schemes.scheme_id', 'asc')
+
+  //MY ORIGINAL ANSWER:::
+  // return db('schemes as sc').leftJoin('steps', 'sc.scheme_id', '=', 'steps.scheme_id')
+  //   .select('sc.scheme_id', 'sc.scheme_name')
+  //   .count('steps.step_id', { as: 'number_of_steps' }) // can be just .count('steps.step_id as 'number_of_steps')
+  //   .groupBy('sc.scheme_id')
+  //   .orderBy('sc.scheme_id', 'asc')
+
+  //ZAC LESSSON ---------------*******************
+  // order is important
+  return db('schemes as sc')
+    .leftJoin('steps as st', 'sc.scheme_id', '=', 'st.scheme_id')
+    .groupBy('sc.scheme_id')
+    .select('sc.*')
+    .count('st.step_id as number_of_steps')
+    .orderBy('sc.scheme_id', 'asc')
 
 }
 
-function findById(scheme_id) { // EXERCISE B
+
+async function findById(scheme_id) { // EXERCISE B
   /*
     1B- Study the SQL query below running it in SQLite Studio against `data/schemes.db3`:
 
@@ -92,34 +104,98 @@ function findById(scheme_id) { // EXERCISE B
         "steps": []
       }
   */
-  return db('schemes').leftJoin('steps', 'schemes.scheme_id', '=', 'steps.scheme_id')
-    .where({ 'schemes.scheme_id': scheme_id })
-    .orderBy('steps.step_number', 'asc')
-    .then(arrayObtained => {
-      let arrayOfSteps = arrayObtained.map(each => {
-        let stepObj =
-        {
-          "step_id": each.step_id,
-          "step_number": each.step_number,
-          "instructions": each.instructions,
-        }
-        if (each.step_id === '' || each.step_id === null) {
-          return []
-        } else {
-          return stepObj;
-        }
-      })
-      let dumbObj = {
-        "scheme_id": Number(scheme_id),
-        "scheme_name": arrayObtained[0].scheme_name,
-        "steps": arrayOfSteps,
-      }
-      return dumbObj;
+
+  // CODE THAT I TRIED TO REMEDY THE EMPTY ARRAY WITH
+  // return db('schemes').leftJoin('steps', 'schemes.scheme_id', 'steps.scheme_id')
+  //   .where({ 'schemes.scheme_id': scheme_id }) //.where( schemes.scheme_Id, scheme_id) should work the same. 
+  //   //.groupBy('schemes.scheme_id')
+  //   .select('steps.*', 'schemes.scheme_name', 'schemes.scheme_id')
+  //   .orderBy('steps.step_number', 'asc')
+  //   .then(arrayObtained => {
+  //     let newArray = arrayObtained.map(each => {
+  //       let Obj;
+  //       let stepsArray = []
+
+
+  //       if (each.step_id === '' || each.step_id === null) {
+  //         console.log(each.scheme_id, 'each.scheme_id')
+  //         Obj = {
+  //           "scheme_id": each.scheme_id,
+  //           "scheme_name": each.scheme_name,
+  //           "steps": []
+  //         }
+  //       } else {
+  //         Obj = {
+  //           "scheme_id": each.scheme_id,
+  //           "scheme_name": each.scheme_name,
+  //           "steps": stepsArray.push({
+  //             "step_id": each.step_id,
+  //             "step_number": each.step_number,
+  //             "instructions": each.instructions,
+  //           })
+  //         }
+  //       }
+  //       return Obj;
+  //     })
+  //     return newArray;
+  //   })
+
+
+  ////CODE THAT I DID FIRST THAT RETURNED EMPTY STEPS IN [[]]
+  // return db('schemes').leftJoin('steps', 'schemes.scheme_id', '=', 'steps.scheme_id')
+  //   .where({ 'schemes.scheme_id': scheme_id })
+  //   .orderBy('steps.step_number', 'asc')
+  //   .then(arrayObtained => {
+  //     let arrayOfSteps = arrayObtained.map(each => {
+  //       let stepObj =
+  //       {
+  //         "step_id": each.step_id,
+  //         "step_number": each.step_number,
+  //         "instructions": each.instructions,
+  //       }
+  //       if (each.step_id === '' || each.step_id === null) {
+  //         return []
+  //       } else {
+  //         return stepObj;
+  //       }
+  //     })
+  //     let dumbObj = {
+  //       "scheme_id": Number(scheme_id),
+  //       "scheme_name": arrayObtained[0].scheme_name,
+  //       "steps": arrayOfSteps,
+  //     }
+  //     return dumbObj;
+  //   })
+
+  //ZAC LESSON _____******************************************
+  const fullSchemes = await db('schemes as sc')
+    .leftJoin('steps as st', 'sc.scheme_id', 'st.scheme_id')
+    .where('sc.scheme_id', scheme_id)
+    .orderBy('st.step_number', 'asc')
+
+  // error handling 
+  if (!fullSchemes.length) return null
+
+  const scheme = {
+    "scheme_id": +scheme_id, // plus sign forces it ot be a number
+    "scheme_name": fullSchemes[0].scheme_name,
+    "steps": [],
+  }
+
+  // if there are steps => steps array
+  fullSchemes.forEach(step => {
+    scheme.steps.push({
+      "step_id": step.step_id,
+      "step_number": step.step_number,
+      "instructions": step.instructions,
     })
-  //return db('users').where({ id }).first(); // .first() makes it so only one thing returns instead of an array of things
+  });
+
+  return { ...scheme, steps: scheme.steps.filter(st => st.step_id) }; // spread operator that overwrites steps with...
+  // filter method...says filter everything that has a step.id...if no step id then leave steps like it was
 }
 
-function findSteps(scheme_id) { // EXERCISE C
+async function findSteps(scheme_id) { // EXERCISE C
   /*
     1C- Build a query in Knex that returns the following data.
     The steps should be sorted by step_number, and the array
@@ -140,26 +216,33 @@ function findSteps(scheme_id) { // EXERCISE C
         }
       ]
   */
-  return db('schemes')
-    .where({ 'schemes.scheme_id': scheme_id })
+  const fullStepObj = await db('schemes')
     .leftJoin('steps', 'schemes.scheme_id', '=', 'steps.scheme_id')
-    //.select('steps.step_id', 'step_number', 'step.instructions', 'schemes.scheme_name')
+    .select('steps.step_id', 'steps.step_number', 'steps.instructions', 'schemes.scheme_name')
+    .where({ 'schemes.scheme_id': scheme_id })
     .orderBy('steps.step_number', 'asc')
-    .then(arrayOfObj => {
-      let newArrayOfObj = arrayOfObj.map(eachObj => {
-        // console.log(eachObj, "newObj");
-        return {
-          "step_id": eachObj.step_id,
-          "step_number": eachObj.step_number,
-          "instructions": eachObj.instructions,
-          "scheme_name": eachObj.scheme_name,
-        }
 
-      })
+  console.log(fullStepObj[0].step_id, "step_id")
 
-      return newArrayOfObj;
-    })
+  if (fullStepObj[0].step_id === null) {
+    return [];
+  } else {
+    return fullStepObj;
+  }
+
+
 }
+
+//GUIDED********doesn't quite work though
+// const rows = await db('schemes as sc')
+//   .leftJoin('steps as st', 'sc.scheme_id', 'st.scheme_id')
+//   .select('st.step_id', 'st.step_number', 'instructions', 'sc.scheme_name')
+//   .where('sc.scheme_id', scheme_id)
+//   .orderBy('steps.step_number', 'asc')
+
+// if (!rows(0).step_id) return []
+// return rows
+
 
 async function add(scheme) { // EXERCISE D
   /*
@@ -182,11 +265,12 @@ async function addStep(scheme_id, step) { // EXERCISE E
   //   "instructions": "profit",
   //   "scheme_name": "Get Rich Quick"
   // }
-  console.log(step, "step from add step")
-  const [step_id] = await db('steps').insert(step, 'id')
-  // .where({ 'scheme_id': scheme_id })
 
-  console.log(step_id, "step_id from add step")
+  const stepsWithID = { ...step, scheme_id }
+  console.log(step, "step from add step")
+  await db('steps').insert(stepsWithID)
+
+  //console.log(step_id, "step_id from add step")
   return findSteps(scheme_id)
 }
 
